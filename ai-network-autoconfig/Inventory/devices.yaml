@@ -4,7 +4,6 @@ devices:
    device_type: cisco_ios
    host: 192.168.1.1
    username: admin
-   password: cisco123 # <--- INSECURE
 
   - name: r2
     vendor: juniper
@@ -12,3 +11,4 @@ devices:
     host: 192.168.1.2
 
     # username and password removed and secured in GitHub Secrets
+
