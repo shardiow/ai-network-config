@@ -1,30 +1,29 @@
-from netmiko import ConnectHandler
-import os # <-- We need this to access environment variables
+# agent/network_runner.py
 
-# --- Helper function to securely inject credentials ---
-def _inject_credentials(device):
-    """Pulls username/password from environment variables (GitHub Secrets)"""
-    device['username'] = os.environ.get('NET_USERNAME')
-    device['password'] = os.environ.get('NET_PASSWORD')
-    # If using Netmiko's secret/enable password, you'd add:
-    # device['secret'] = os.environ.get('NET_SECRET') 
+from netmiko import ConnectHandler
+import os # <--- ADD THIS
+
+# ... (rest of the file remains the same)
 
 def get_running_config(device):
-    _inject_credentials(device) # Securely add credentials
-    conn = ConnectHandler(**device)
-    # The 'show run' command is common across Cisco and Juniper, but often specific.
-    # We will use 'show running-config' as defined in your prompt.
-    output = conn.send_command("show running-config")
-    conn.disconnect()
-    return output
-
+   # Load credentials from Environment Variables if available, otherwise use inventory
+   conn_info = device.copy()
+   conn_info['username'] = os.environ.get('NETWORK_USERNAME', conn_info.get('username')) # <--- ADD/MODIFY
+   conn_info['password'] = os.environ.get('NETWORK_PASSWORD', conn_info.get('password')) # <--- ADD/MODIFY
+   
+   conn = ConnectHandler(**conn_info) # <--- USE conn_info
+   output = conn.send_command("show running-config")
+   conn.disconnect()
+   return output
+ 
 def apply_config(device, config):
-    _inject_credentials(device) # Securely add credentials
-    conn = ConnectHandler(**device)
-    print(f"[+] Sending config to {device['name']}...")
-    
-    # Netmiko expects a list of configuration commands
-    conn.send_config_set(config.splitlines()) 
-    conn.save_config()
-    conn.disconnect()
-    print(f"[✓] Configuration applied and saved on {device['name']}.")
+   # Load credentials from Environment Variables if available, otherwise use inventory
+   conn_info = device.copy()
+   conn_info['username'] = os.environ.get('NETWORK_USERNAME', conn_info.get('username')) # <--- ADD/MODIFY
+   conn_info['password'] = os.environ.get('NETWORK_PASSWORD', conn_info.get('password')) # <--- ADD/MODIFY
+ 
+   conn = ConnectHandler(**conn_info) # <--- USE conn_info
+   print(f"[+] Sending config to {device['name']}...")
+   conn.send_config_set(config.split("\n"))
+   conn.save_config()
+   conn.disconnect()
