@@ -1,22 +1,42 @@
-# ... (inside jobs: deploy: steps:)
+name: Auto Network Deployment
 
-    - name: Cache Python dependencies
-      # Use a specific version of the cache action (e.g., v4)
-      uses: actions/cache@v4 
-      with:
-        # The path where Python stores installed packages (for Linux/macOS runners)
-        path: ${{ env.pythonLocation }}
-        
-        # Key is based on the contents of requirements.txt
-        # 'runner.os' ensures a unique cache for each operating system
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-        
-        # Fallback to older caches if the requirements.txt hash changes
-        restore-keys: |
-          ${{ runner.os }}-pip-
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "desired-configs/**"
 
-    - name: Install dependencies
-      # Only install if the cache didn't exist (cache-hit is false)
-      run: pip install -r requirements.txt
-      # The conditional 'if' prevents running this step if the cache was successfully restored
-      # You may need to set up Python first to use 'pip', but for simplicity, we keep it here.
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- STEP 1: Set up Python ---
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # --- STEP 2: Cache Dependencies ---
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # --- STEP 3: Install Dependencies ---
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # --- STEP 4: Run AI Agent for Drift Check and Deployment (Fix is here) ---
+      - name: Run AI agent for drift check and deployment
+        run: python agent/ai_agent.py
+        env: 
+          NET_USER: ${{ secrets.NET_USER }}
+          NET_PASS: ${{ secrets.NET_PASS }}
