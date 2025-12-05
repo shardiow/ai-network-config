@@ -1,0 +1,22 @@
+# ... (inside jobs: deploy: steps:)
+
+    - name: Cache Python dependencies
+      # Use a specific version of the cache action (e.g., v4)
+      uses: actions/cache@v4 
+      with:
+        # The path where Python stores installed packages (for Linux/macOS runners)
+        path: ${{ env.pythonLocation }}
+        
+        # Key is based on the contents of requirements.txt
+        # 'runner.os' ensures a unique cache for each operating system
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        
+        # Fallback to older caches if the requirements.txt hash changes
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      # Only install if the cache didn't exist (cache-hit is false)
+      run: pip install -r requirements.txt
+      # The conditional 'if' prevents running this step if the cache was successfully restored
+      # You may need to set up Python first to use 'pip', but for simplicity, we keep it here.
